@@ -4,11 +4,13 @@ import requests
 
 if not st.session_state.get('quiz_started', False):
     st.markdown("""
-    ## Welcome to the Quiz Application! 
-
+    ## Welcome to the QuizcraftAI! 
+    Ready to enhance your knowledge? Then please read through the user guide and guidlines for the best learning experience! 
+    ## User Guide            
+    
     Follow these simple steps to get started:
 
-    - **Step 1**: Enter the *topic* for your quiz in the sidebar.
+    - **Step 1**: Enter the *topic* for your quiz in the sidebar. Press enter to apply
     - **Step 2**: Select the *difficulty level* of the quiz.
     - **Step 3**: Specify the *number of questions* you want in your quiz.
     - **Step 4**: Click '**Generate Quiz**' to start.
@@ -16,7 +18,25 @@ if not st.session_state.get('quiz_started', False):
     - **Step 6**: After answering all questions, click '**Submit Quiz**' to see your score.
     - **Step 7**: Before final submission, you will be asked to confirm your action.
 
-    Enjoy the quiz and test your knowledge!
+                
+    ## User Guidelines for QuizCraft AI
+
+    To ensure a smooth and enjoyable experience with QuizCraft AI, please adhere to the following guidelines:
+
+    - **Appropriate Content Only:** 
+        - When entering a topic for your quiz, please refrain from using gibberish, inappropriate, or offensive content. The application is designed to generate educational and meaningful quizzes.
+    - **Quiz Length Limitation:**
+        - You can generate a quiz with up to 10 questions. This limit is set to ensure optimal performance and user experience.
+    - **Patience is Key:**
+        - After clicking '**Generate Quiz**', please allow a minute or two for the quiz to be generated. The process involves real-time AI computation, which may take a short while depending on the server load and complexity of the topic.
+    - **Navigating the Quiz:**
+        - Use the '**Next**' and '**Back**' buttons to navigate through the quiz questions. Make sure to answer each question before proceeding to the next.
+    - **Quiz Submission:**
+        - Once you have answered all the questions, click '**Submit Quiz**' to see your score. Before the final submission, you will be asked to confirm your action to ensure that you are ready to submit your answers.
+
+    We hope you enjoy using QuizCraft AI to test and enhance your knowledge. Happy quizzing!
+
+
     """, unsafe_allow_html=True)
 
 # Initialize session state variables
@@ -33,7 +53,7 @@ if 'quiz_submitted' not in st.session_state:
 if 'confirm_submission' not in st.session_state:
     st.session_state.confirm_submission = False
 
-# Define a function to fetch questions and handle errors
+# Define a function to fetch questions
 def fetch_questions(topic, difficulty, number_of_questions):
     questions = []
     for _ in range(number_of_questions):
@@ -70,7 +90,6 @@ if not st.session_state.get('quiz_started', False):
                     st.rerun()  # Force a re-render here after updating the session state
 
 # Quiz navigation and display
-# Display a single question at a time
 if st.session_state.get('quiz_started', False) and not st.session_state.get('quiz_submitted', False):
 
     current_question = st.session_state.current_question
@@ -79,32 +98,47 @@ if st.session_state.get('quiz_started', False) and not st.session_state.get('qui
     st.empty()
     st.subheader(f'Question {current_question + 1}')
     st.write(f"{q_data['question']}")  # Display the question text
-    selected_option = st.radio("Select an answer", q_data['options'], key=f'answer_{current_question}')
+
+    # Check if there is already a stored answer for this question
+    stored_answer = st.session_state.user_answers.get(current_question, "Select your answer")
+
+    options = ["Select your answer"] + q_data['options']
+    selected_option = st.radio("Select an answer", options, key=f'answer_{current_question}')
 
     # Navigation buttons
     col1, col2 = st.columns(2)
     with col1:
         if current_question > 0 and st.button('Back'):
+            if st.session_state.confirm_submission:
+                # If a user presses back and they have confirmation modal open, then close it.
+                st.session_state.confirm_submission = False
+
             st.session_state.current_question -= 1
             st.rerun()
 
     with col2:
         if current_question < len(st.session_state.questions) - 1:
             if st.button('Next'):
-                # Store the answer and increment the question
-                st.session_state.user_answers[current_question] = selected_option
-                st.session_state.current_question += 1
-                st.rerun()
+                if selected_option != "Select your answer":
+                    # Store the answer and increment the question
+                    st.session_state.user_answers[current_question] = selected_option
+                    st.session_state.current_question += 1
+                    st.rerun()
+                else:
+                    st.warning("Please select an answer to proceed")
         else:
             # Last question logic
             if st.button('Submit Quiz'):
-                st.session_state.user_answers[current_question] = selected_option
-                st.session_state.confirm_submission = True
-                st.empty()
-                st.rerun()
+                if selected_option != "Select your answer":
+                    st.session_state.user_answers[current_question] = selected_option
+                    st.session_state.confirm_submission = True
+                    st.rerun()
+                else:
+                    st.warning("Please select an answer to proceed")
 
 # Display confirmation options
 if st.session_state.confirm_submission:
+    st.empty()
 
     cols = st.columns([1, 1, 1])
     with cols[1]:

@@ -8,7 +8,7 @@ from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
 import os
 
-api_key = os.getenv('OPENAI_API_KEY')
+
 
 
 
@@ -19,7 +19,7 @@ def generate_quiz_question(topic, difficulty):
     if not topic:  # Check if the topic is empty
         return "Error: Topic is empty"
 
-    prompt = f"Create a {difficulty} quiz question about {topic}. List four possible answers (without any prefixes) and indicate the correct one.\n\n" \
+    prompt = f"Create a {difficulty} quiz question about {topic}. List four possible answers each on a new line without any prefixes or numbering. indicate the correct one.\n\n" \
              "Question:\n[question text]\n\n" \
              "Answers:\n" \
              "[First answer]\n" \
@@ -69,6 +69,7 @@ def process_quiz_data(generated_text):
 
 def generate_quiz(request, topic, difficulty):
     question = generate_quiz_question(topic, difficulty)
+    print(question)
     processed_data = process_quiz_data(question)
     return JsonResponse(processed_data)
 
@@ -82,4 +83,5 @@ class QuestionViewSet(viewsets.ModelViewSet):
 class ChoiceViewSet(viewsets.ModelViewSet):
     queryset = Choice.objects.all()
     serializer_class = ChoiceSerializer
+
 
